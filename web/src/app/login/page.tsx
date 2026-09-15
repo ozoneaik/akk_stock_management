@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { LoginScreen } from "./LoginScreen";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const users = await prisma.user.findMany({
     where: { isActive: true },
