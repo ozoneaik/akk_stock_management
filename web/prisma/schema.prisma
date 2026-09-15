@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model ActivityLog {
+  id          String   @id
+  action      String
+  entityType  String
+  entityId    String
+  description String
+  preValue    String?
+  postValue   String?
+  userId      String
+  userRole    String   @default("OWNER")
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+}
+
+model Category {
+  id          String    @id
+  name        String    @unique
+  description String?
+  color       String    @default("#2e7d32")
+  iconName    String?   @default("Sprout")
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  products    Product[]
+
+  @@index([sortOrder])
+}
+
+model ChannelStockMapping {
+  id             String    @id
+  productId      String
+  channel        String
+  platformSku    String
+  platformItemId String?
+  syncEnabled    Boolean   @default(true)
+  lastSyncedAt   DateTime?
+  lastSyncStatus String?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([channel, platformSku])
+  @@index([productId])
+}
+
+model ChatConversation {
+  id             String        @id
+  channel        String
+  customerName   String
+  customerAvatar String?
+  externalId     String?
+  status         String        @default("ACTIVE")
+  lastMessageAt  DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  messages       ChatMessage[]
+
+  @@index([channel])
+  @@index([lastMessageAt])
+}
+
+model ChatMessage {
+  id             String           @id
+  conversationId String
+  senderType     String
+  content        String
+  mediaUrl       String?
+  isRead         Boolean          @default(false)
+  sentAt         DateTime         @default(now())
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([sentAt])
+}
+
+model Product {
+  id                   String                @id
+  sku                  String?               @unique
+  barcode              String?               @unique
+  name                 String
+  commonName           String?
+  description          String?
+  imageUrl             String?
+  categoryId           String
+  baseUnit             String                @default("ขวด")
+  packUnit             String?               @default("ลัง")
+  unitsPerPack         Int                   @default(12)
+  currentStock         Int                   @default(0)
+  minStockAlert        Int                   @default(10)
+  isActive             Boolean               @default(true)
+  createdById          String?
+  updatedById          String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime
+  channelStockMappings ChannelStockMapping[]
+  category             Category              @relation(fields: [categoryId], references: [id])
+  createdBy            User?                 @relation("Product_createdByIdToUser", fields: [createdById], references: [id])
+  updatedBy            User?                 @relation("Product_updatedByIdToUser", fields: [updatedById], references: [id])
+  prices               ProductPrice[]
+  stockMovements       StockMovement[]
+
+  @@index([categoryId])
+  @@index([commonName])
+  @@index([createdById], map: "Product_createdById_fkey")
+  @@index([currentStock])
+  @@index([name])
+  @@index([updatedById], map: "Product_updatedById_fkey")
+}
+
+model ProductPrice {
+  id                String    @id
+  productId         String
+  channel           String    @default("STORE")
+  price             Float
+  packPrice         Float?
+  discountType      String    @default("NONE")
+  discountValue     Float     @default(0)
+  discountStartDate DateTime?
+  discountEndDate   DateTime?
+  note              String?
+  updatedAt         DateTime
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, channel])
+  @@index([channel])
+  @@index([productId])
+}
+
+model StockMovement {
+  id            String   @id
+  productId     String
+  type          String
+  quantity      Int
+  inputUnit     String
+  inputQuantity Float
+  balanceBefore Int
+  balanceAfter  Int
+  referenceDoc  String?
+  imageUrl      String?
+  note          String?
+  createdById   String
+  createdAt     DateTime @default(now())
+  createdBy     User     @relation(fields: [createdById], references: [id])
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([productId])
+  @@index([type])
+}
+
+model User {
+  id              String          @id
+  username        String          @unique
+  name            String
+  role            String          @default("OWNER")
+  pin             String?
+  avatarUrl       String?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  activityLogs    ActivityLog[]
+  createdProducts Product[]       @relation("Product_createdByIdToUser")
+  updatedProducts Product[]       @relation("Product_updatedByIdToUser")
+  stockMovements  StockMovement[]
+
+  @@index([role])
+}

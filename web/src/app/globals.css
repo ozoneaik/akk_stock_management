@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f5;
+  --foreground: #1f2417;
+  --brand: #2e7d32;
+  --brand-dark: #1b5e20;
+  --brand-light: #dcedc8;
+  --danger: #c0392b;
+  --card: #ffffff;
+  --border: #e2e2de;
+  --muted: #666666;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
+  --color-danger: var(--danger);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-thai);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-thai), sans-serif;
+  /* กันเนื้อหาโดนขอบจอบัง บน iPhone/iPad ที่มี notch หรือ home indicator */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+input,
+select,
+textarea {
+  /* กัน Safari บน iOS auto-zoom เข้าเวลาแตะช่องกรอกข้อมูล (เกิดเมื่อ font-size ต่ำกว่า 16px) */
+  font-size: 16px;
+}
