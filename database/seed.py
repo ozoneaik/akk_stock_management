@@ -5,8 +5,8 @@ database/seed.py
 (มีทั้งรายการที่สต็อกต่ำกว่า 10 เพื่อทดสอบการแจ้งเตือนใน Dashboard)
 
 รันแยกได้ด้วยคำสั่ง: python -m database.seed
-หรือถูกเรียกอัตโนมัติจาก main.py ถ้าฐานข้อมูลยังว่างอยู่ (ฐานข้อมูลใช้ร่วมกับเว็บแอป
-ปกติจะมีข้อมูลอยู่แล้วเสมอ ฟังก์ชันนี้จะข้ามการ seed โดยอัตโนมัติถ้ามีผู้ใช้อยู่แล้ว)
+หรือถูกเรียกอัตโนมัติจาก main.py ถ้าฐานข้อมูลยังว่างอยู่ (ฟังก์ชันนี้จะข้ามการ seed
+โดยอัตโนมัติถ้ามีผู้ใช้อยู่แล้ว)
 """
 
 import os
@@ -16,6 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 from database.db import init_db, is_database_empty
+from database.migrate import safe_print
 from models import user as user_model
 from models import category as category_model
 from models import product as product_model
@@ -105,7 +106,7 @@ def seed_all():
     init_db()
 
     if not is_database_empty():
-        print("ฐานข้อมูลมีข้อมูลอยู่แล้ว ข้ามการ seed (ฐานข้อมูลนี้ใช้ร่วมกับเว็บแอปเสมอ)")
+        safe_print("ฐานข้อมูลมีข้อมูลอยู่แล้ว ข้ามการ seed")
         return
 
     admin_user_id = None
@@ -134,9 +135,9 @@ def seed_all():
             admin_user_id,
         )
 
-    print("Seed ข้อมูลตัวอย่างเรียบร้อยแล้ว")
-    print(f"  - ผู้ใช้: {len(SAMPLE_USERS)} คน (admin/PIN 9999, owner/PIN 1234)")
-    print(f"  - สินค้า: {len(SAMPLE_PRODUCTS)} รายการ")
+    safe_print("Seed ข้อมูลตัวอย่างเรียบร้อยแล้ว")
+    safe_print(f"  - ผู้ใช้: {len(SAMPLE_USERS)} คน (admin/PIN 9999, owner/PIN 1234)")
+    safe_print(f"  - สินค้า: {len(SAMPLE_PRODUCTS)} รายการ")
 
 
 if __name__ == "__main__":

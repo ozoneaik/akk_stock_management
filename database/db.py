@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 database/db.py
-เชื่อมต่อฐานข้อมูล TiDB (MySQL-compatible) — ฐานข้อมูลเดียวกับที่เว็บแอป (web/) ใช้
-schema ถูกจัดการโดยฝั่งเว็บ (Prisma) อยู่แล้ว ฝั่ง desktop นี้แค่เชื่อมต่อและอ่าน/เขียนข้อมูล
-ไม่มีหน้าที่สร้างตาราง (ต่างจากตอนที่ยังใช้ SQLite ของตัวเอง)
+เชื่อมต่อฐานข้อมูล TiDB (MySQL-compatible)
+schema ถูกสร้าง/จัดการโดย database/migrate.py (ดูไฟล์นั้นสำหรับโครงสร้างตารางทั้งหมด)
 """
 
 import os
@@ -33,8 +32,10 @@ def get_connection():
 
 
 def init_db():
-    """ไม่ต้องทำอะไร — schema ของ TiDB ถูกสร้าง/จัดการโดยฝั่งเว็บแอป (Prisma) อยู่แล้ว"""
-    pass
+    """สร้างตารางทั้งหมดใน TiDB ถ้ายังไม่มี (ดู database/migrate.py)"""
+    from database.migrate import migrate
+
+    migrate()
 
 
 def is_database_empty():
