@@ -44,7 +44,7 @@ class StockAdjustPopup(tk.Toplevel):
             font=ui_helpers.get_ui_font(bold=True), wraplength=320, justify="left",
         ).pack(anchor="w")
         tk.Label(
-            form, text=f'คงเหลือปัจจุบัน: {self.product["currentStock"]} {self.product["baseUnit"]}',
+            form, text=f'คงเหลือปัจจุบัน: {self.product["current_stock"]} {self.product["base_unit"]}',
             font=ui_helpers.get_ui_font(size=9), fg="#666666",
         ).pack(anchor="w", pady=(0, 12))
 
@@ -70,10 +70,10 @@ class StockAdjustPopup(tk.Toplevel):
             self.amount_entry.insert(0, str(initial_amount))
 
         self.unit_mode_var = tk.StringVar(value=initial_unit_mode)
-        if self.product.get("packUnit"):
+        if self.product.get("pack_unit"):
             unit_options = {
-                "base": self.product["baseUnit"],
-                "pack": f'{self.product["packUnit"]} ({self.product["unitsPerPack"]} {self.product["baseUnit"]})',
+                "base": self.product["base_unit"],
+                "pack": f'{self.product["pack_unit"]} ({self.product["units_per_pack"]} {self.product["base_unit"]})',
             }
             unit_menu = tk.OptionMenu(amount_row, self.unit_mode_var, *unit_options.keys())
             unit_menu.config(font=ui_helpers.get_ui_font(size=9))
@@ -87,7 +87,7 @@ class StockAdjustPopup(tk.Toplevel):
             self.unit_mode_var.trace_add("write", lambda *_: self._refresh_unit_menu_label(unit_options))
             unit_menu.pack(side="left", padx=(8, 0))
         else:
-            tk.Label(amount_row, text=self.product["baseUnit"], font=ui_helpers.get_ui_font()).pack(
+            tk.Label(amount_row, text=self.product["base_unit"], font=ui_helpers.get_ui_font()).pack(
                 side="left", padx=(8, 0)
             )
 

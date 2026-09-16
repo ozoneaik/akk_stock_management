@@ -126,8 +126,10 @@ schema ถูกสร้าง/จัดการผ่านฝั่ง Deskt
 ผลที่ตามมาจากการใช้ฐานข้อมูลร่วม:
 - **id เป็น string (UUID)** ไม่ใช่เลขรันอัตโนมัติแบบเดิม
 - **role เก็บเป็นตัวพิมพ์ใหญ่** (`ADMIN`/`OWNER`) และ **login ด้วย PIN แทน password**
-- การ "ลบ" ผู้ใช้/สินค้าเป็นแบบ soft-delete (`isActive = FALSE`) เสมอ เพราะมีตารางอื่นอ้างอิง
-  (StockMovement, ActivityLog) แบบ `ON DELETE RESTRICT` การลบจริงจะทำให้เกิด error ถ้าเคยมีประวัติ
+- การ "ลบ" ผู้ใช้/สินค้าเป็นแบบ soft-delete (`is_active = FALSE`) เสมอ เพราะมีตารางอื่นอ้างอิง
+  (`stock_movement`, `activity_log`) แบบ `ON DELETE RESTRICT` การลบจริงจะทำให้เกิด error ถ้าเคยมีประวัติ
+- **ชื่อตาราง/คอลัมน์ทั้งหมดเป็น snake_case ตัวพิมพ์เล็ก** (เช่น `user`, `product`, `current_stock`,
+  `created_at`) ดูโครงสร้างเต็มได้ที่ `database/migrate.py`
 - รูปภาพสินค้า/ผู้ใช้เก็บเป็น **ลิงก์ URL** เท่านั้น
 
 ## แผนสำหรับโมดูลในอนาคต (ยังไม่ได้ทำในเวอร์ชันนี้)

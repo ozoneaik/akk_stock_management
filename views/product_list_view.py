@@ -88,10 +88,10 @@ class ProductListView(tk.Frame):
 
             self._product_by_row = {}
             for product in products:
-                tag = "low" if product["currentStock"] < product["minStockAlert"] else ""
+                tag = "low" if product["current_stock"] < product["min_stock_alert"] else ""
                 row_id = self.tree.insert(
                     "", "end",
-                    values=(product["sku"] or "-", product["name"], product["category_name"], product["currentStock"], product["baseUnit"]),
+                    values=(product["sku"] or "-", product["name"], product["category_name"], product["current_stock"], product["base_unit"]),
                     tags=(tag,) if tag else (),
                 )
                 self._product_by_row[row_id] = product["id"]

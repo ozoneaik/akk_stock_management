@@ -26,7 +26,7 @@ def create_user(username: str, pin: str, name: str, role: str) -> str:
         now = _now()
         cur.execute(
             """
-            INSERT INTO User (id, username, name, role, pin, isActive, createdAt, updatedAt)
+            INSERT INTO user (id, username, name, role, pin, is_active, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (user_id, username, name, role, pin, True, now, now),
@@ -42,9 +42,9 @@ def authenticate(username: str, pin: str):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM User WHERE username = %s", (username,))
+        cur.execute("SELECT * FROM user WHERE username = %s", (username,))
         row = cur.fetchone()
-        if row is None or not row["isActive"]:
+        if row is None or not row["is_active"]:
             return None
         if row["pin"] != pin:
             return None
@@ -59,7 +59,7 @@ def get_user_by_id(user_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM User WHERE id = %s", (user_id,))
+        cur.execute("SELECT * FROM user WHERE id = %s", (user_id,))
         return cur.fetchone()
     finally:
         conn.close()
@@ -70,9 +70,9 @@ def get_all_users(active_only: bool = True):
     try:
         cur = conn.cursor()
         if active_only:
-            cur.execute("SELECT * FROM User WHERE isActive = TRUE ORDER BY username")
+            cur.execute("SELECT * FROM user WHERE is_active = TRUE ORDER BY username")
         else:
-            cur.execute("SELECT * FROM User ORDER BY username")
+            cur.execute("SELECT * FROM user ORDER BY username")
         return cur.fetchall()
     finally:
         conn.close()
@@ -83,7 +83,7 @@ def count_active_admins() -> int:
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) as cnt FROM User WHERE role = 'ADMIN' AND isActive = TRUE")
+        cur.execute("SELECT COUNT(*) as cnt FROM user WHERE role = 'ADMIN' AND is_active = TRUE")
         return cur.fetchone()["cnt"]
     finally:
         conn.close()
@@ -95,7 +95,7 @@ def update_user(user_id: str, name: str, role: str):
     try:
         cur = conn.cursor()
         cur.execute(
-            "UPDATE User SET name = %s, role = %s, updatedAt = %s WHERE id = %s",
+            "UPDATE user SET name = %s, role = %s, updated_at = %s WHERE id = %s",
             (name, role, _now(), user_id),
         )
         conn.commit()
@@ -107,19 +107,19 @@ def update_pin(user_id: str, new_pin: str):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("UPDATE User SET pin = %s, updatedAt = %s WHERE id = %s", (new_pin, _now(), user_id))
+        cur.execute("UPDATE user SET pin = %s, updated_at = %s WHERE id = %s", (new_pin, _now(), user_id))
         conn.commit()
     finally:
         conn.close()
 
 
 def deactivate_user(user_id: str):
-    """ลบผู้ใช้แบบ soft-delete (ตั้ง isActive = False) เพราะมี FK จากตารางอื่นอ้างถึงผู้ใช้อยู่
-    (StockMovement, ActivityLog) การลบจริงจะชนกับ constraint ถ้าผู้ใช้เคยทำรายการใดๆ ไว้"""
+    """ลบผู้ใช้แบบ soft-delete (ตั้ง is_active = False) เพราะมี FK จากตารางอื่นอ้างถึงผู้ใช้อยู่
+    (stock_movement, activity_log) การลบจริงจะชนกับ constraint ถ้าผู้ใช้เคยทำรายการใดๆ ไว้"""
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("UPDATE User SET isActive = FALSE, updatedAt = %s WHERE id = %s", (_now(), user_id))
+        cur.execute("UPDATE user SET is_active = FALSE, updated_at = %s WHERE id = %s", (_now(), user_id))
         conn.commit()
     finally:
         conn.close()

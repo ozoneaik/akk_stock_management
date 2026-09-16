@@ -15,7 +15,7 @@ from datetime import datetime
 
 from database.db import get_connection
 
-EXPORTED_TABLES = ["User", "Category", "Product", "ProductPrice", "StockMovement", "ActivityLog"]
+EXPORTED_TABLES = ["user", "category", "product", "product_price", "stock_movement", "activity_log"]
 
 
 def default_export_filename() -> str:

@@ -122,7 +122,7 @@ class StockAdjustView(tk.Frame):
         products = stock_controller.search_products(keyword)
         for product in products:
             row_id = self.result_tree.insert(
-                "", "end", values=(product["sku"] or "-", product["name"], product["currentStock"], product["baseUnit"])
+                "", "end", values=(product["sku"] or "-", product["name"], product["current_stock"], product["base_unit"])
             )
             self._result_by_row[row_id] = product
 
@@ -158,14 +158,14 @@ class StockAdjustView(tk.Frame):
             product = entry["product"]
             direction_label = DIRECTION_LABELS.get(entry["direction"], "-")
             if entry["amount"]:
-                unit_label = product["packUnit"] if entry["unit_mode"] == "pack" else product["baseUnit"]
+                unit_label = product["pack_unit"] if entry["unit_mode"] == "pack" else product["base_unit"]
                 amount_label = f'{entry["amount"]:g} {unit_label}'
             else:
                 amount_label = "(ยังไม่ได้กำหนด)"
             self.pending_tree.insert(
                 "", "end", iid=str(product_id),
                 values=(
-                    product["sku"] or "-", product["name"], f'{product["currentStock"]} {product["baseUnit"]}',
+                    product["sku"] or "-", product["name"], f'{product["current_stock"]} {product["base_unit"]}',
                     direction_label, amount_label, entry["reason"] or "",
                 ),
             )
@@ -224,10 +224,10 @@ class StockAdjustView(tk.Frame):
         errors = []
         for product_id, entry in ready.items():
             product = entry["product"]
-            base_amount = entry["amount"] * product["unitsPerPack"] if entry["unit_mode"] == "pack" else entry["amount"]
+            base_amount = entry["amount"] * product["units_per_pack"] if entry["unit_mode"] == "pack" else entry["amount"]
             base_amount = round(base_amount)
             change_amount = base_amount if entry["direction"] == "in" else -base_amount
-            unit_label = product["packUnit"] if entry["unit_mode"] == "pack" else product["baseUnit"]
+            unit_label = product["pack_unit"] if entry["unit_mode"] == "pack" else product["base_unit"]
             try:
                 stock_controller.adjust_stock(
                     product_id, change_amount, entry["reason"], self.current_user,

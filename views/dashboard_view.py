@@ -98,12 +98,12 @@ class DashboardView(tk.Frame):
 
             self._product_by_row = {}
             for product in data["low_stock_items"]:
-                tag = "critical" if product["currentStock"] <= product["minStockAlert"] / 2 else ""
+                tag = "critical" if product["current_stock"] <= product["min_stock_alert"] / 2 else ""
                 row_id = self.tree.insert(
                     "", "end",
                     values=(
                         product["sku"] or "-", product["name"], product["category_name"],
-                        product["currentStock"], product["baseUnit"], product["minStockAlert"],
+                        product["current_stock"], product["base_unit"], product["min_stock_alert"],
                     ),
                     tags=(tag,) if tag else (),
                 )

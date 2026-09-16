@@ -43,7 +43,7 @@ def is_database_empty():
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) as cnt FROM User")
+        cur.execute("SELECT COUNT(*) as cnt FROM user")
         row = cur.fetchone()
         return row["cnt"] == 0
     finally:

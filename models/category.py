@@ -14,7 +14,7 @@ def get_all_categories():
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Category ORDER BY sortOrder, name")
+        cur.execute("SELECT * FROM category ORDER BY sort_order, name")
         return cur.fetchall()
     finally:
         conn.close()
@@ -30,18 +30,18 @@ def get_or_create_category(name: str) -> str:
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM Category WHERE name = %s", (name,))
+        cur.execute("SELECT id FROM category WHERE name = %s", (name,))
         row = cur.fetchone()
         if row:
             return row["id"]
 
-        cur.execute("SELECT COALESCE(MAX(sortOrder), 0) as max_sort FROM Category")
+        cur.execute("SELECT COALESCE(MAX(sort_order), 0) as max_sort FROM category")
         next_sort = cur.fetchone()["max_sort"] + 1
 
         category_id = str(uuid.uuid4())
         now = datetime.now()
         cur.execute(
-            "INSERT INTO Category (id, name, sortOrder, createdAt, updatedAt) VALUES (%s, %s, %s, %s, %s)",
+            "INSERT INTO category (id, name, sort_order, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)",
             (category_id, name, next_sort, now, now),
         )
         conn.commit()
@@ -56,7 +56,7 @@ def get_category_by_id(category_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Category WHERE id = %s", (category_id,))
+        cur.execute("SELECT * FROM category WHERE id = %s", (category_id,))
         return cur.fetchone()
     finally:
         conn.close()

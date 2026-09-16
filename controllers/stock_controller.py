@@ -30,7 +30,7 @@ def adjust_stock(
         raise ValueError("ไม่พบสินค้านี้ในระบบ")
 
     if unit_label is None:
-        unit_label = product["baseUnit"]
+        unit_label = product["base_unit"]
     if input_quantity is None:
         input_quantity = abs(change_amount)
 
@@ -48,7 +48,7 @@ def adjust_stock(
         description=(
             f'{current_user["name"]} {direction_text}สต็อกสินค้า "{product["name"]}" '
             f'จำนวน {input_quantity:g} {unit_label} '
-            f'(คงเหลือใหม่: {new_quantity} {product["baseUnit"]}) เหตุผล: {reason or "-"}'
+            f'(คงเหลือใหม่: {new_quantity} {product["base_unit"]}) เหตุผล: {reason or "-"}'
         ),
     )
     return new_quantity

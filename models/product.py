@@ -23,18 +23,18 @@ def _row_to_dict_with_prices(conn, row):
     product = dict(row)
     cur = conn.cursor()
     cur.execute(
-        "SELECT channel, price, discountType, discountValue FROM ProductPrice WHERE productId = %s",
+        "SELECT channel, price, discount_type, discount_value FROM product_price WHERE product_id = %s",
         (product["id"],),
     )
     product["prices"] = {
         r["channel"]: {
             "price": r["price"],
-            "discount": r["discountValue"] if r["discountType"] != "NONE" else 0,
+            "discount": r["discount_value"] if r["discount_type"] != "NONE" else 0,
         }
         for r in cur.fetchall()
     }
 
-    cur.execute("SELECT name FROM Category WHERE id = %s", (product["categoryId"],))
+    cur.execute("SELECT name FROM category WHERE id = %s", (product["category_id"],))
     cat_row = cur.fetchone()
     product["category_name"] = cat_row["name"] if cat_row else "ไม่ระบุหมวดหมู่"
     return product
@@ -48,11 +48,11 @@ def get_all_products(search_text: str = None):
         if search_text:
             like = f"%{search_text.strip()}%"
             cur.execute(
-                "SELECT * FROM Product WHERE isActive = TRUE AND (sku LIKE %s OR name LIKE %s) ORDER BY name",
+                "SELECT * FROM product WHERE is_active = TRUE AND (sku LIKE %s OR name LIKE %s) ORDER BY name",
                 (like, like),
             )
         else:
-            cur.execute("SELECT * FROM Product WHERE isActive = TRUE ORDER BY name")
+            cur.execute("SELECT * FROM product WHERE is_active = TRUE ORDER BY name")
         rows = cur.fetchall()
         return [_row_to_dict_with_prices(conn, row) for row in rows]
     finally:
@@ -63,7 +63,7 @@ def get_product_by_id(product_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Product WHERE id = %s", (product_id,))
+        cur.execute("SELECT * FROM product WHERE id = %s", (product_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -73,12 +73,12 @@ def get_product_by_id(product_id):
 
 
 def get_low_stock_products():
-    """สินค้าที่จำนวนคงเหลือน้อยกว่า minStockAlert ของตัวเอง"""
+    """สินค้าที่จำนวนคงเหลือน้อยกว่า min_stock_alert ของตัวเอง"""
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT * FROM Product WHERE isActive = TRUE AND currentStock < minStockAlert ORDER BY currentStock ASC"
+            "SELECT * FROM product WHERE is_active = TRUE AND current_stock < min_stock_alert ORDER BY current_stock ASC"
         )
         rows = cur.fetchall()
         return [_row_to_dict_with_prices(conn, row) for row in rows]
@@ -92,8 +92,8 @@ def get_total_stock_summary():
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT COUNT(*) as total_products, COALESCE(SUM(currentStock), 0) as total_quantity "
-            "FROM Product WHERE isActive = TRUE"
+            "SELECT COUNT(*) as total_products, COALESCE(SUM(current_stock), 0) as total_quantity "
+            "FROM product WHERE is_active = TRUE"
         )
         row = cur.fetchone()
         return {"total_products": row["total_products"], "total_quantity": row["total_quantity"]}
@@ -114,9 +114,9 @@ def create_product(data: dict, user_id: str) -> str:
         product_id = _new_id()
         cur.execute(
             """
-            INSERT INTO Product
-                (id, sku, name, categoryId, baseUnit, packUnit, unitsPerPack, currentStock,
-                 minStockAlert, imageUrl, description, isActive, createdById, updatedById, createdAt, updatedAt)
+            INSERT INTO product
+                (id, sku, name, category_id, base_unit, pack_unit, units_per_pack, current_stock,
+                 min_stock_alert, image_url, description, is_active, created_by_id, updated_by_id, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
@@ -143,7 +143,7 @@ def create_product(data: dict, user_id: str) -> str:
             discount_value = float(price_info.get("discount", 0) or 0)
             cur.execute(
                 """
-                INSERT INTO ProductPrice (id, productId, channel, price, discountType, discountValue, updatedAt)
+                INSERT INTO product_price (id, product_id, channel, price, discount_type, discount_value, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
@@ -171,9 +171,9 @@ def update_product(product_id, data: dict, user_id: str):
         now = _now()
         cur.execute(
             """
-            UPDATE Product
-            SET sku = %s, name = %s, categoryId = %s, baseUnit = %s, packUnit = %s, unitsPerPack = %s,
-                minStockAlert = %s, imageUrl = %s, description = %s, updatedById = %s, updatedAt = %s
+            UPDATE product
+            SET sku = %s, name = %s, category_id = %s, base_unit = %s, pack_unit = %s, units_per_pack = %s,
+                min_stock_alert = %s, image_url = %s, description = %s, updated_by_id = %s, updated_at = %s
             WHERE id = %s
             """,
             (
@@ -193,12 +193,12 @@ def update_product(product_id, data: dict, user_id: str):
         )
 
         # อัปเดตราคา: ลบของเก่าแล้วใส่ใหม่ทั้งหมด ง่ายและชัดเจนกว่าการไล่ diff ทีละช่องทาง
-        cur.execute("DELETE FROM ProductPrice WHERE productId = %s", (product_id,))
+        cur.execute("DELETE FROM product_price WHERE product_id = %s", (product_id,))
         for channel, price_info in (data.get("prices") or {}).items():
             discount_value = float(price_info.get("discount", 0) or 0)
             cur.execute(
                 """
-                INSERT INTO ProductPrice (id, productId, channel, price, discountType, discountValue, updatedAt)
+                INSERT INTO product_price (id, product_id, channel, price, discount_type, discount_value, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
@@ -218,11 +218,11 @@ def update_product(product_id, data: dict, user_id: str):
 
 
 def deactivate_product(product_id):
-    """ลบสินค้าแบบ soft-delete (isActive = False) เก็บประวัติ StockMovement/ActivityLog ไว้ครบ"""
+    """ลบสินค้าแบบ soft-delete (is_active = False) เก็บประวัติ stock_movement/activity_log ไว้ครบ"""
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("UPDATE Product SET isActive = FALSE WHERE id = %s", (product_id,))
+        cur.execute("UPDATE product SET is_active = FALSE WHERE id = %s", (product_id,))
         conn.commit()
     finally:
         conn.close()
@@ -232,26 +232,26 @@ def adjust_stock(product_id, change_amount: int, reason: str, unit_label: str, i
     """
     เพิ่ม/ลดจำนวนสต็อกสินค้า (change_amount เป็นบวก = เพิ่ม (IN), ลบ = ลด (OUT), หน่วยเป็นหน่วยย่อยเสมอ)
     unit_label/input_quantity: หน่วยและจำนวนตามที่ผู้ใช้กรอกจริง (ก่อนแปลงเป็นหน่วยย่อย) เก็บไว้เป็นประวัติ
-    บันทึกลง StockMovement ด้วยทุกครั้งเพื่อดูประวัติย้อนหลังได้ (โครงสร้างตรงกับที่เว็บแอปใช้)
+    บันทึกลง stock_movement ด้วยทุกครั้งเพื่อดูประวัติย้อนหลังได้
     """
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT currentStock FROM Product WHERE id = %s", (product_id,))
+        cur.execute("SELECT current_stock FROM product WHERE id = %s", (product_id,))
         row = cur.fetchone()
         if row is None:
             raise ValueError("ไม่พบสินค้านี้ในระบบ")
 
-        new_quantity = row["currentStock"] + change_amount
+        new_quantity = row["current_stock"] + change_amount
         if new_quantity < 0:
             raise ValueError("จำนวนสต็อกคงเหลือจะติดลบ กรุณาตรวจสอบจำนวนที่ต้องการลด")
 
-        cur.execute("UPDATE Product SET currentStock = %s, updatedById = %s WHERE id = %s", (new_quantity, user_id, product_id))
+        cur.execute("UPDATE product SET current_stock = %s, updated_by_id = %s WHERE id = %s", (new_quantity, user_id, product_id))
         cur.execute(
             """
-            INSERT INTO StockMovement
-                (id, productId, type, quantity, inputUnit, inputQuantity, balanceBefore, balanceAfter,
-                 note, createdById, createdAt)
+            INSERT INTO stock_movement
+                (id, product_id, type, quantity, input_unit, input_quantity, balance_before, balance_after,
+                 note, created_by_id, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
@@ -261,7 +261,7 @@ def adjust_stock(product_id, change_amount: int, reason: str, unit_label: str, i
                 abs(change_amount),
                 unit_label,
                 input_quantity,
-                row["currentStock"],
+                row["current_stock"],
                 new_quantity,
                 reason or None,
                 user_id,

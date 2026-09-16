@@ -22,7 +22,7 @@ def add_log(user_id: str, user_role: str, action: str, entity_type: str, entity_
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO ActivityLog (id, action, entityType, entityId, description, userId, userRole, createdAt)
+            INSERT INTO activity_log (id, action, entity_type, entity_id, description, user_id, user_role, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (str(uuid.uuid4()), action, entity_type, str(entity_id), description, user_id, user_role, datetime.now()),
@@ -40,12 +40,12 @@ def get_all_logs(limit: int = 500):
         cur.execute(
             """
             SELECT
-                ActivityLog.*,
-                User.name AS user_display_name,
-                User.username AS username
-            FROM ActivityLog
-            LEFT JOIN User ON User.id = ActivityLog.userId
-            ORDER BY ActivityLog.createdAt DESC
+                activity_log.*,
+                user.name AS user_display_name,
+                user.username AS username
+            FROM activity_log
+            LEFT JOIN user ON user.id = activity_log.user_id
+            ORDER BY activity_log.created_at DESC
             LIMIT %s
             """,
             (limit,),

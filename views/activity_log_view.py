@@ -56,7 +56,7 @@ class ActivityLogView(tk.Frame):
             for row in self.tree.get_children():
                 self.tree.delete(row)
             for entry in logs:
-                created_at_text = entry["createdAt"].strftime("%d/%m/%Y %H:%M:%S")
+                created_at_text = entry["created_at"].strftime("%d/%m/%Y %H:%M:%S")
                 self.tree.insert(
                     "", "end",
                     values=(created_at_text, entry["user_display_name"], entry["action_label"], entry["description"]),

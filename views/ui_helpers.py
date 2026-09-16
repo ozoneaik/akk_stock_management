@@ -62,7 +62,10 @@ def load_photo_image(image_url: str, size=(80, 80)):
     fetch_succeeded = False
     if image_url:
         try:
-            with urllib.request.urlopen(image_url, timeout=5) as response:
+            # Cloudflare (R2 public URL) ปฏิเสธ request ที่ไม่มี User-Agent แบบเบราว์เซอร์ด้วย 403
+            # user-agent เริ่มต้นของ urllib คือ "Python-urllib/x.x" จึงต้องใส่เองเพื่อให้โหลดรูปผ่าน
+            request = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(request, timeout=5) as response:
                 img = Image.open(io.BytesIO(response.read()))
             fetch_succeeded = True
         except Exception:

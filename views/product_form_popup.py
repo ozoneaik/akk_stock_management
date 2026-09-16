@@ -4,14 +4,17 @@ views/product_form_popup.py
 Popup ฟอร์มสำหรับ "เพิ่มสินค้าใหม่" และ "แก้ไขสินค้า" ใช้ฟอร์มเดียวกัน
 ถ้าส่ง product_data เข้ามา = โหมดแก้ไข, ถ้าไม่ส่ง = โหมดเพิ่มใหม่
 
-หมายเหตุ: รูปภาพสินค้าเก็บเป็น "ลิงก์ URL" ไม่ใช่ไฟล์ในเครื่องอีกต่อไป เพราะฐานข้อมูลใช้ร่วมกับ
-เว็บแอปที่รันอยู่บนเซิร์ฟเวอร์อื่น การอ้างอิงไฟล์ในเครื่อง desktop จะไม่มีความหมายฝั่งเว็บ
+หมายเหตุ: รูปภาพสินค้าเลือกจากไฟล์ในเครื่องแล้วอัปโหลดขึ้น Cloudflare R2 ตอนกดบันทึก
+เก็บ URL เต็มไว้ในฐานข้อมูล (image_url) เพราะฐานข้อมูลใช้ร่วมกับเว็บแอปที่รันอยู่บนเซิร์ฟเวอร์อื่น
 """
 
+import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 
-from controllers import product_controller
+from PIL import Image, ImageTk
+
+from controllers import product_controller, storage_controller
 from views import ui_helpers
 import config
 
@@ -30,6 +33,8 @@ class ProductFormPopup(tk.Toplevel):
         ui_helpers.center_window(self, 560, 700)
 
         self.price_entries = {}  # channel -> {"price": Entry, "discount": Entry}
+        self.current_image_url = None  # URL รูปที่บันทึกอยู่ในฐานข้อมูลปัจจุบัน (โหมดแก้ไข)
+        self.selected_local_image_path = None  # path ไฟล์รูปใหม่ที่เพิ่งเลือก ยังไม่ได้อัปโหลดจนกว่าจะกดบันทึก
 
         self._build_ui()
         if self.is_edit_mode:
@@ -133,7 +138,7 @@ class ProductFormPopup(tk.Toplevel):
         image_frame = tk.Frame(form)
         image_frame.pack(fill="x", pady=(15, 0))
         tk.Label(
-            image_frame, text="ลิงก์รูปภาพสินค้า (URL — เว้นว่างไว้จะใช้รูป default)",
+            image_frame, text="รูปภาพสินค้า (เว้นว่างไว้จะใช้รูป default)",
             font=ui_helpers.get_ui_font(),
         ).pack(anchor="w")
 
@@ -142,12 +147,15 @@ class ProductFormPopup(tk.Toplevel):
         self.image_preview_label = tk.Label(image_row)
         self.image_preview_label.pack(side="left", padx=(0, 10))
 
-        image_url_col = tk.Frame(image_row)
-        image_url_col.pack(side="left", fill="x", expand=True)
-        self.image_url_entry = tk.Entry(image_url_col, font=ui_helpers.get_ui_font())
-        self.image_url_entry.pack(fill="x")
+        image_col = tk.Frame(image_row)
+        image_col.pack(side="left", fill="x", expand=True)
+        self.image_status_label = tk.Label(
+            image_col, text="ยังไม่ได้เลือกรูป", font=ui_helpers.get_ui_font(size=9), fg="#666666",
+            anchor="w", justify="left", wraplength=300,
+        )
+        self.image_status_label.pack(fill="x", anchor="w")
         tk.Button(
-            image_url_col, text="แสดงตัวอย่างรูป", command=self._refresh_image_preview, font=ui_helpers.get_ui_font(size=9),
+            image_col, text="เลือกรูปภาพ...", command=self._on_choose_image_click, font=ui_helpers.get_ui_font(size=9),
         ).pack(anchor="w", pady=(5, 0))
 
         # --- ราคาต่อช่องทางขาย ---
@@ -196,9 +204,28 @@ class ProductFormPopup(tk.Toplevel):
         entry.pack(fill="x")
         return entry
 
+    def _on_choose_image_click(self):
+        file_path = filedialog.askopenfilename(
+            parent=self,
+            title="เลือกรูปภาพสินค้า",
+            filetypes=[("รูปภาพ", "*.jpg *.jpeg *.png *.gif *.webp *.bmp"), ("ทุกไฟล์", "*.*")],
+        )
+        if not file_path:
+            return
+        self.selected_local_image_path = file_path
+        self.image_status_label.config(text=os.path.basename(file_path))
+        self._refresh_image_preview()
+
     def _refresh_image_preview(self):
-        url = self.image_url_entry.get().strip()
-        photo = ui_helpers.load_photo_image(url or None, size=(90, 90))
+        if self.selected_local_image_path:
+            try:
+                img = Image.open(self.selected_local_image_path).convert("RGB")
+                img.thumbnail((90, 90))
+                photo = ImageTk.PhotoImage(img)
+            except Exception:
+                photo = ui_helpers.load_photo_image(None, size=(90, 90))
+        else:
+            photo = ui_helpers.load_photo_image(self.current_image_url, size=(90, 90))
         self.image_preview_label.config(image=photo)
         self.image_preview_label.image = photo  # เก็บ reference กัน garbage collect
 
@@ -210,19 +237,21 @@ class ProductFormPopup(tk.Toplevel):
         self.code_entry.config(state="disabled")  # ไม่ให้แก้รหัสสินค้าเพื่อป้องกันข้อมูลชนกัน
         self.name_entry.insert(0, data["name"])
         self.category_combo.set(data.get("category_name", ""))
-        self.base_unit_entry.insert(0, data["baseUnit"])
-        self.pack_unit_entry.insert(0, data["packUnit"] or "")
+        self.base_unit_entry.insert(0, data["base_unit"])
+        self.pack_unit_entry.insert(0, data["pack_unit"] or "")
         self.units_per_pack_entry.delete(0, tk.END)
-        self.units_per_pack_entry.insert(0, str(data["unitsPerPack"]))
+        self.units_per_pack_entry.insert(0, str(data["units_per_pack"]))
 
         self.quantity_entry.config(state="normal")
         self.quantity_entry.delete(0, tk.END)
-        self.quantity_entry.insert(0, str(data["currentStock"]))
+        self.quantity_entry.insert(0, str(data["current_stock"]))
         self.quantity_entry.config(state="disabled")
 
         self.threshold_entry.delete(0, tk.END)
-        self.threshold_entry.insert(0, str(data["minStockAlert"]))
-        self.image_url_entry.insert(0, data.get("imageUrl") or "")
+        self.threshold_entry.insert(0, str(data["min_stock_alert"]))
+        self.current_image_url = data.get("image_url") or None
+        if self.current_image_url:
+            self.image_status_label.config(text=self.current_image_url)
         self.note_entry.insert(0, data.get("description") or "")
 
         for channel, price_info in data.get("prices", {}).items():
@@ -259,6 +288,17 @@ class ProductFormPopup(tk.Toplevel):
             messagebox.showwarning("ข้อมูลราคาไม่ถูกต้อง", "ราคาและส่วนลดต้องเป็นตัวเลขเท่านั้น", parent=self)
             return
 
+        # ถ้าผู้ใช้เลือกรูปใหม่ อัปโหลดขึ้น R2 ก่อนตั้งแต่ตอนนี้ เพื่อให้ได้ URL เต็มไปเก็บลงฐานข้อมูล
+        new_image_url = self.current_image_url
+        uploaded_new_image = False
+        if self.selected_local_image_path:
+            try:
+                new_image_url = storage_controller.upload_product_image(self.selected_local_image_path, code)
+                uploaded_new_image = True
+            except Exception as e:
+                messagebox.showerror("อัปโหลดรูปภาพไม่สำเร็จ", f"ไม่สามารถอัปโหลดรูปภาพขึ้น cloud ได้: {e}", parent=self)
+                return
+
         data = {
             "code": code,
             "name": name,
@@ -266,9 +306,9 @@ class ProductFormPopup(tk.Toplevel):
             "packaging_unit": base_unit,
             "pack_unit": pack_unit,
             "units_per_pack": self.units_per_pack_entry.get().strip(),
-            "quantity": self.product_data["currentStock"] if self.is_edit_mode else self.quantity_entry.get().strip(),
+            "quantity": self.product_data["current_stock"] if self.is_edit_mode else self.quantity_entry.get().strip(),
             "low_stock_threshold": self.threshold_entry.get().strip(),
-            "image_path": self.image_url_entry.get().strip() or None,
+            "image_path": new_image_url,
             "note": self.note_entry.get().strip(),
             "prices": prices,
         }
@@ -276,9 +316,13 @@ class ProductFormPopup(tk.Toplevel):
         error = product_controller.validate_product_data(data)
         if error:
             messagebox.showwarning("ข้อมูลไม่ครบถ้วน", error, parent=self)
+            if uploaded_new_image:
+                storage_controller.delete_product_image(new_image_url)
             return
 
         data["category_id"] = product_controller.get_or_create_category(category_name)
+
+        old_image_url = self.product_data.get("image_url") if self.is_edit_mode else None
 
         try:
             if self.is_edit_mode:
@@ -289,10 +333,18 @@ class ProductFormPopup(tk.Toplevel):
                 messagebox.showinfo("สำเร็จ", "เพิ่มสินค้าใหม่เรียบร้อยแล้ว", parent=self)
         except ValueError as e:
             messagebox.showwarning("ไม่สามารถบันทึกได้", str(e), parent=self)
+            if uploaded_new_image:
+                storage_controller.delete_product_image(new_image_url)
             return
         except Exception as e:  # เผื่อ code ซ้ำ (UNIQUE constraint) หรือข้อผิดพลาดอื่นๆ จากฐานข้อมูล
             messagebox.showerror("เกิดข้อผิดพลาด", f"ไม่สามารถบันทึกข้อมูลได้: {e}", parent=self)
+            if uploaded_new_image:
+                storage_controller.delete_product_image(new_image_url)
             return
+
+        # บันทึกสำเร็จแล้วค่อยลบรูปเก่าทิ้ง เพื่อประหยัดพื้นที่ cloud โดยไม่เสี่ยงเหลือสินค้าไม่มีรูปถ้าขั้นตอนก่อนหน้าล้มเหลว
+        if uploaded_new_image and old_image_url:
+            storage_controller.delete_product_image(old_image_url)
 
         if self.on_saved:
             self.on_saved()

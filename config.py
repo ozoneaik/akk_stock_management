@@ -22,6 +22,14 @@ ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 IMAGES_DIR = os.path.join(ASSETS_DIR, "images")
 DEFAULT_PRODUCT_IMAGE = os.path.join(IMAGES_DIR, "default.png")
 
+# --- Cloudflare R2 (เก็บรูปภาพสินค้า) ---
+R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID")
+R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
+R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
+R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
+R2_ENDPOINT = os.environ.get("R2_ENDPOINT")
+R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL")
+
 # --- ข้อมูลทั่วไปของแอป ---
 APP_TITLE = "ระบบจัดการสต็อกสินค้า - ออฟกิจเกษตร"
 APP_MIN_WIDTH = 1100

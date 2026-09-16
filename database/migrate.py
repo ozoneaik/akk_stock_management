@@ -3,8 +3,8 @@
 database/migrate.py
 สร้างตารางทั้งหมดที่โปรแกรมต้องใช้ใน TiDB (MySQL-compatible) ถ้ายังไม่มี
 
-เดิม schema ถูกจัดการโดยฝั่งเว็บแอป (web/) ผ่าน Prisma แต่ตอนนี้ web/ ถูกลบไปแล้ว
-ฝั่ง Desktop นี้จึงต้องรับหน้าที่สร้างตารางเอง โครงสร้างตารางด้านล่างตรงกับที่ models/*.py ใช้งานอยู่ทุกตัวอักษร
+ชื่อตาราง/คอลัมน์ทั้งหมดเป็น snake_case ตัวพิมพ์เล็ก โครงสร้างตารางด้านล่างตรงกับที่
+models/*.py ใช้งานอยู่ทุกตัวอักษร
 
 รันแยกได้ด้วยคำสั่ง: python -m database.migrate
 หรือถูกเรียกอัตโนมัติจาก database.db.init_db() ทุกครั้งที่โปรแกรมเริ่มทำงาน (ใช้ CREATE TABLE IF NOT EXISTS
@@ -31,126 +31,126 @@ def safe_print(message: str):
 # เรียงตามลำดับ dependency (FK) ต้องสร้างตารางที่ถูกอ้างอิงก่อน
 STATEMENTS = [
     """
-    CREATE TABLE IF NOT EXISTS User (
+    CREATE TABLE IF NOT EXISTS user (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
         username VARCHAR(191) NOT NULL,
         name VARCHAR(191) NOT NULL,
         role VARCHAR(191) NOT NULL DEFAULT 'OWNER',
         pin VARCHAR(191) NULL,
-        avatarUrl VARCHAR(191) NULL,
-        isActive BOOLEAN NOT NULL DEFAULT TRUE,
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        updatedAt DATETIME(3) NOT NULL,
-        UNIQUE KEY User_username_key (username),
-        KEY User_role_idx (role)
+        avatar_url VARCHAR(191) NULL,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at DATETIME(3) NOT NULL,
+        UNIQUE KEY user_username_key (username),
+        KEY user_role_idx (role)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
-    CREATE TABLE IF NOT EXISTS Category (
+    CREATE TABLE IF NOT EXISTS category (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
         description VARCHAR(191) NULL,
         color VARCHAR(191) NOT NULL DEFAULT '#2e7d32',
-        iconName VARCHAR(191) NULL DEFAULT 'Sprout',
-        sortOrder INT NOT NULL DEFAULT 0,
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        updatedAt DATETIME(3) NOT NULL,
-        UNIQUE KEY Category_name_key (name),
-        KEY Category_sortOrder_idx (sortOrder)
+        icon_name VARCHAR(191) NULL DEFAULT 'Sprout',
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at DATETIME(3) NOT NULL,
+        UNIQUE KEY category_name_key (name),
+        KEY category_sort_order_idx (sort_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
-    CREATE TABLE IF NOT EXISTS Product (
+    CREATE TABLE IF NOT EXISTS product (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
         sku VARCHAR(191) NULL,
         barcode VARCHAR(191) NULL,
         name VARCHAR(191) NOT NULL,
-        commonName VARCHAR(191) NULL,
+        common_name VARCHAR(191) NULL,
         description VARCHAR(191) NULL,
-        imageUrl VARCHAR(191) NULL,
-        categoryId VARCHAR(191) NOT NULL,
-        baseUnit VARCHAR(191) NOT NULL DEFAULT 'ขวด',
-        packUnit VARCHAR(191) NULL DEFAULT 'ลัง',
-        unitsPerPack INT NOT NULL DEFAULT 12,
-        currentStock INT NOT NULL DEFAULT 0,
-        minStockAlert INT NOT NULL DEFAULT 10,
-        isActive BOOLEAN NOT NULL DEFAULT TRUE,
-        createdById VARCHAR(191) NULL,
-        updatedById VARCHAR(191) NULL,
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        updatedAt DATETIME(3) NOT NULL,
-        UNIQUE KEY Product_sku_key (sku),
-        UNIQUE KEY Product_barcode_key (barcode),
-        KEY Product_categoryId_idx (categoryId),
-        KEY Product_commonName_idx (commonName),
-        KEY Product_createdById_idx (createdById),
-        KEY Product_currentStock_idx (currentStock),
-        KEY Product_name_idx (name),
-        KEY Product_updatedById_idx (updatedById),
-        CONSTRAINT Product_categoryId_fkey FOREIGN KEY (categoryId) REFERENCES Category(id),
-        CONSTRAINT Product_createdById_fkey FOREIGN KEY (createdById) REFERENCES User(id),
-        CONSTRAINT Product_updatedById_fkey FOREIGN KEY (updatedById) REFERENCES User(id)
+        image_url VARCHAR(191) NULL,
+        category_id VARCHAR(191) NOT NULL,
+        base_unit VARCHAR(191) NOT NULL DEFAULT 'ขวด',
+        pack_unit VARCHAR(191) NULL DEFAULT 'ลัง',
+        units_per_pack INT NOT NULL DEFAULT 12,
+        current_stock INT NOT NULL DEFAULT 0,
+        min_stock_alert INT NOT NULL DEFAULT 10,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_by_id VARCHAR(191) NULL,
+        updated_by_id VARCHAR(191) NULL,
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at DATETIME(3) NOT NULL,
+        UNIQUE KEY product_sku_key (sku),
+        UNIQUE KEY product_barcode_key (barcode),
+        KEY product_category_id_idx (category_id),
+        KEY product_common_name_idx (common_name),
+        KEY product_created_by_id_idx (created_by_id),
+        KEY product_current_stock_idx (current_stock),
+        KEY product_name_idx (name),
+        KEY product_updated_by_id_idx (updated_by_id),
+        CONSTRAINT product_category_id_fkey FOREIGN KEY (category_id) REFERENCES category(id),
+        CONSTRAINT product_created_by_id_fkey FOREIGN KEY (created_by_id) REFERENCES user(id),
+        CONSTRAINT product_updated_by_id_fkey FOREIGN KEY (updated_by_id) REFERENCES user(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
-    CREATE TABLE IF NOT EXISTS ProductPrice (
+    CREATE TABLE IF NOT EXISTS product_price (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
-        productId VARCHAR(191) NOT NULL,
+        product_id VARCHAR(191) NOT NULL,
         channel VARCHAR(191) NOT NULL DEFAULT 'STORE',
         price DOUBLE NOT NULL,
-        packPrice DOUBLE NULL,
-        discountType VARCHAR(191) NOT NULL DEFAULT 'NONE',
-        discountValue DOUBLE NOT NULL DEFAULT 0,
-        discountStartDate DATETIME(3) NULL,
-        discountEndDate DATETIME(3) NULL,
+        pack_price DOUBLE NULL,
+        discount_type VARCHAR(191) NOT NULL DEFAULT 'NONE',
+        discount_value DOUBLE NOT NULL DEFAULT 0,
+        discount_start_date DATETIME(3) NULL,
+        discount_end_date DATETIME(3) NULL,
         note VARCHAR(191) NULL,
-        updatedAt DATETIME(3) NOT NULL,
-        UNIQUE KEY ProductPrice_productId_channel_key (productId, channel),
-        KEY ProductPrice_channel_idx (channel),
-        KEY ProductPrice_productId_idx (productId),
-        CONSTRAINT ProductPrice_productId_fkey FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+        updated_at DATETIME(3) NOT NULL,
+        UNIQUE KEY product_price_product_id_channel_key (product_id, channel),
+        KEY product_price_channel_idx (channel),
+        KEY product_price_product_id_idx (product_id),
+        CONSTRAINT product_price_product_id_fkey FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
-    CREATE TABLE IF NOT EXISTS StockMovement (
+    CREATE TABLE IF NOT EXISTS stock_movement (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
-        productId VARCHAR(191) NOT NULL,
+        product_id VARCHAR(191) NOT NULL,
         type VARCHAR(191) NOT NULL,
         quantity INT NOT NULL,
-        inputUnit VARCHAR(191) NOT NULL,
-        inputQuantity DOUBLE NOT NULL,
-        balanceBefore INT NOT NULL,
-        balanceAfter INT NOT NULL,
-        referenceDoc VARCHAR(191) NULL,
-        imageUrl VARCHAR(191) NULL,
+        input_unit VARCHAR(191) NOT NULL,
+        input_quantity DOUBLE NOT NULL,
+        balance_before INT NOT NULL,
+        balance_after INT NOT NULL,
+        reference_doc VARCHAR(191) NULL,
+        image_url VARCHAR(191) NULL,
         note VARCHAR(191) NULL,
-        createdById VARCHAR(191) NOT NULL,
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        KEY StockMovement_createdAt_idx (createdAt),
-        KEY StockMovement_createdById_idx (createdById),
-        KEY StockMovement_productId_idx (productId),
-        KEY StockMovement_type_idx (type),
-        CONSTRAINT StockMovement_productId_fkey FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
-        CONSTRAINT StockMovement_createdById_fkey FOREIGN KEY (createdById) REFERENCES User(id)
+        created_by_id VARCHAR(191) NOT NULL,
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        KEY stock_movement_created_at_idx (created_at),
+        KEY stock_movement_created_by_id_idx (created_by_id),
+        KEY stock_movement_product_id_idx (product_id),
+        KEY stock_movement_type_idx (type),
+        CONSTRAINT stock_movement_product_id_fkey FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE,
+        CONSTRAINT stock_movement_created_by_id_fkey FOREIGN KEY (created_by_id) REFERENCES user(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
-    CREATE TABLE IF NOT EXISTS ActivityLog (
+    CREATE TABLE IF NOT EXISTS activity_log (
         id VARCHAR(191) NOT NULL PRIMARY KEY,
         action VARCHAR(191) NOT NULL,
-        entityType VARCHAR(191) NOT NULL,
-        entityId VARCHAR(191) NOT NULL,
+        entity_type VARCHAR(191) NOT NULL,
+        entity_id VARCHAR(191) NOT NULL,
         description VARCHAR(191) NOT NULL,
-        preValue TEXT NULL,
-        postValue TEXT NULL,
-        userId VARCHAR(191) NOT NULL,
-        userRole VARCHAR(191) NOT NULL DEFAULT 'OWNER',
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        KEY ActivityLog_action_idx (action),
-        KEY ActivityLog_createdAt_idx (createdAt),
-        KEY ActivityLog_entityType_entityId_idx (entityType, entityId),
-        KEY ActivityLog_userId_idx (userId),
-        CONSTRAINT ActivityLog_userId_fkey FOREIGN KEY (userId) REFERENCES User(id)
+        pre_value TEXT NULL,
+        post_value TEXT NULL,
+        user_id VARCHAR(191) NOT NULL,
+        user_role VARCHAR(191) NOT NULL DEFAULT 'OWNER',
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        KEY activity_log_action_idx (action),
+        KEY activity_log_created_at_idx (created_at),
+        KEY activity_log_entity_type_entity_id_idx (entity_type, entity_id),
+        KEY activity_log_user_id_idx (user_id),
+        CONSTRAINT activity_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES user(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
 ]
