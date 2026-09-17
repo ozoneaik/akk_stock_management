@@ -104,7 +104,7 @@ def get_total_stock_summary():
 def create_product(data: dict, user_id: str) -> str:
     """
     สร้างสินค้าใหม่ คืนค่า id ที่สร้าง (string)
-    data ต้องมี: code(sku), name, category_id, base_unit, pack_unit, units_per_pack,
+    data ต้องมี: code(sku), name,common_name, category_id, base_unit, pack_unit, units_per_pack,
                 quantity, low_stock_threshold, image_url, note, prices (dict: {channel: {price, discount}})
     """
     conn = get_connection()
@@ -115,14 +115,15 @@ def create_product(data: dict, user_id: str) -> str:
         cur.execute(
             """
             INSERT INTO product
-                (id, sku, name, category_id, base_unit, pack_unit, units_per_pack, current_stock,
+                (id, sku, name,common_name, category_id, base_unit, pack_unit, units_per_pack, current_stock,
                  min_stock_alert, image_url, description, is_active, created_by_id, updated_by_id, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 product_id,
                 data["code"].strip() or None,
                 data["name"].strip(),
+                data["common_name"].strip(),
                 data.get("category_id"),
                 data["packaging_unit"].strip(),
                 data.get("pack_unit") or None,
@@ -172,13 +173,14 @@ def update_product(product_id, data: dict, user_id: str):
         cur.execute(
             """
             UPDATE product
-            SET sku = %s, name = %s, category_id = %s, base_unit = %s, pack_unit = %s, units_per_pack = %s,
+            SET sku = %s, name = %s,common_name = %s, category_id = %s, base_unit = %s, pack_unit = %s, units_per_pack = %s,
                 min_stock_alert = %s, image_url = %s, description = %s, updated_by_id = %s, updated_at = %s
             WHERE id = %s
             """,
             (
                 data["code"].strip() or None,
                 data["name"].strip(),
+                data["common_name"].strip(),
                 data.get("category_id"),
                 data["packaging_unit"].strip(),
                 data.get("pack_unit") or None,

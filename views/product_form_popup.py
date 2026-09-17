@@ -78,6 +78,7 @@ class ProductFormPopup(tk.Toplevel):
         # --- ข้อมูลพื้นฐาน ---
         self.code_entry = self._add_labeled_entry(form, "รหัสสินค้า *")
         self.name_entry = self._add_labeled_entry(form, "ชื่อสินค้า *")
+        self.common_name_entry = self._add_labeled_entry(form, "ชื่อสามัญ (ถ้ามี)")
 
         tk.Label(form, text="หมวดหมู่ *", font=ui_helpers.get_ui_font()).pack(anchor="w", pady=(8, 2))
         categories = product_controller.get_categories()
@@ -236,6 +237,7 @@ class ProductFormPopup(tk.Toplevel):
         self.code_entry.insert(0, data["sku"] or "")
         self.code_entry.config(state="disabled")  # ไม่ให้แก้รหัสสินค้าเพื่อป้องกันข้อมูลชนกัน
         self.name_entry.insert(0, data["name"])
+        self.common_name_entry.insert(0, data["common_name"] or "")
         self.category_combo.set(data.get("category_name", ""))
         self.base_unit_entry.insert(0, data["base_unit"])
         self.pack_unit_entry.insert(0, data["pack_unit"] or "")
@@ -274,6 +276,7 @@ class ProductFormPopup(tk.Toplevel):
     def _on_save_click(self):
         code = self.code_entry.get().strip()
         name = self.name_entry.get().strip()
+        common_name = self.common_name_entry.get().strip()
         category_name = self.category_combo.get().strip()
         base_unit = self.base_unit_entry.get().strip()
         pack_unit = self.pack_unit_entry.get().strip()
@@ -302,6 +305,7 @@ class ProductFormPopup(tk.Toplevel):
         data = {
             "code": code,
             "name": name,
+            "common_name": common_name,
             "category_id": None,
             "packaging_unit": base_unit,
             "pack_unit": pack_unit,
