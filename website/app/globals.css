@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --brand: #2e7d32;
+  --brand-dark: #1b5e20;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Tahoma, sans-serif;
+}
+
+/* ตัด animation/transition ทุกชนิดตามข้อกำหนด ยกเว้น loading spinner (.spinner) */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

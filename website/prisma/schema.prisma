@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ActivityLog {
+  id         String   @id
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  description String
+  preValue   String?  @map("pre_value") @db.Text
+  postValue  String?  @map("post_value") @db.Text
+  userId     String   @map("user_id")
+  userRole   String   @default("OWNER") @map("user_role")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("activity_log")
+}
+
+model Category {
+  id          String    @id
+  name        String    @unique
+  description String?
+  color       String    @default("#2e7d32")
+  iconName    String?   @default("Sprout") @map("icon_name")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @map("updated_at")
+  products    Product[]
+
+  @@index([sortOrder])
+  @@map("category")
+}
+
+model Product {
+  id             String          @id
+  sku            String?         @unique
+  barcode        String?         @unique
+  name           String
+  commonName     String?         @map("common_name")
+  description    String?
+  imageUrl       String?         @map("image_url")
+  categoryId     String          @map("category_id")
+  baseUnit       String          @default("ขวด") @map("base_unit")
+  packUnit       String?         @default("ลัง") @map("pack_unit")
+  unitsPerPack   Int             @default(12) @map("units_per_pack")
+  currentStock   Int             @default(0) @map("current_stock")
+  minStockAlert  Int             @default(10) @map("min_stock_alert")
+  isActive       Boolean         @default(true) @map("is_active")
+  createdById    String?         @map("created_by_id")
+  updatedById    String?         @map("updated_by_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @map("updated_at")
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdBy      User?           @relation("ProductCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updatedBy      User?           @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  prices         ProductPrice[]
+  stockMovements StockMovement[]
+
+  @@index([categoryId])
+  @@index([commonName])
+  @@index([createdById])
+  @@index([currentStock])
+  @@index([name])
+  @@index([updatedById])
+  @@map("product")
+}
+
+model ProductPrice {
+  id                String    @id
+  productId         String    @map("product_id")
+  channel           String    @default("STORE")
+  price             Float
+  packPrice         Float?    @map("pack_price")
+  discountType      String    @default("NONE") @map("discount_type")
+  discountValue     Float     @default(0) @map("discount_value")
+  discountStartDate DateTime? @map("discount_start_date")
+  discountEndDate   DateTime? @map("discount_end_date")
+  note              String?
+  updatedAt         DateTime  @map("updated_at")
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([productId, channel])
+  @@index([channel])
+  @@index([productId])
+  @@map("product_price")
+}
+
+model StockMovement {
+  id            String   @id
+  productId     String   @map("product_id")
+  type          String
+  quantity      Int
+  inputUnit     String   @map("input_unit")
+  inputQuantity Float    @map("input_quantity")
+  balanceBefore Int      @map("balance_before")
+  balanceAfter  Int      @map("balance_after")
+  referenceDoc  String?  @map("reference_doc")
+  imageUrl      String?  @map("image_url")
+  note          String?
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  createdBy     User     @relation(fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([productId])
+  @@index([type])
+  @@map("stock_movement")
+}
+
+model User {
+  id              String          @id
+  username        String          @unique
+  name            String
+  role            String          @default("OWNER")
+  pin             String?
+  password        String?
+  avatarUrl       String?         @map("avatar_url")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @map("updated_at")
+  activityLogs    ActivityLog[]
+  createdProducts Product[]       @relation("ProductCreatedBy")
+  updatedProducts Product[]       @relation("ProductUpdatedBy")
+  stockMovements  StockMovement[]
+
+  @@index([role])
+  @@map("user")
+}
